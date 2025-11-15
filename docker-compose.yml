@@ -2,23 +2,6 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: cognisense_db
-    environment:
-      POSTGRES_USER: cognisense
-      POSTGRES_PASSWORD: devpassword
-      POSTGRES_DB: cognisense_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cognisense"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   api:
     build: .
     container_name: cognisense_api
@@ -28,12 +11,7 @@ services:
       - ./models:/app/models  # Cache ML models
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://cognisense:devpassword@postgres:5432/cognisense_db
       - ENVIRONMENT=development
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-volumes:
-  postgres_data:

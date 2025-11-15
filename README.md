@@ -23,17 +23,17 @@ A FastAPI-based backend service that powers the CogniSense platform for tracking
 ## 🛠️ Tech Stack
 
 | Component | Technology | Purpose |
-|-----------|-----------|---------|
+|-----------|-----------|-------|
 | **Framework** | FastAPI | High-performance async web framework |
 | **Server** | Uvicorn | ASGI server |
-| **Database** | PostgreSQL | Relational database with JSONB support |
+| **Database** | Supabase (PostgreSQL) | Managed PostgreSQL with real-time features |
 | **ORM** | SQLModel | Type-safe ORM with Pydantic integration |
 | **ML Library** | Hugging Face Transformers | Pre-trained NLP models |
 | **Authentication** | FastAPI-Users + JWT | User management and auth |
 | **Validation** | Pydantic | Data validation and settings |
 | **Testing** | Pytest | Unit and integration tests |
 | **Dependency Mgmt** | Poetry | Python package management |
-| **Containerization** | Docker Compose | Local development environment |
+| **Containerization** | Docker | Application containerization |
 
 ---
 
@@ -74,7 +74,8 @@ cognisense-backend/
 ### Prerequisites
 - Python 3.12+
 - Poetry (for dependency management)
-- Docker & Docker Compose (optional, for containerized setup)
+- Supabase account (for database)
+- Docker (optional, for containerized deployment)
 
 ### 1. Clone Repository
 ```bash
@@ -94,21 +95,17 @@ cp .env.example .env
 ```
 
 **Key environment variables:**
-- `DATABASE_URL`: PostgreSQL connection string
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_KEY`: Your Supabase anon/service key
 - `SECRET_KEY`: JWT secret (generate with `openssl rand -hex 32`)
 - `ALLOWED_ORIGINS`: CORS origins for browser extension
 
-### 4. Start Database (Docker)
-```bash
-docker-compose up postgres -d
-```
+### 4. Set up Supabase Database
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Copy your project URL and anon key to `.env`
+3. Set up your database schema using Supabase dashboard or SQL editor
 
-### 5. Run Migrations (TODO - when database models are ready)
-```bash
-alembic upgrade head
-```
-
-### 6. Start Development Server
+### 5. Start Development Server
 ```bash
 poetry run uvicorn app.main:app --reload
 ```
@@ -121,15 +118,14 @@ API Documentation: **http://localhost:8000/docs**
 
 ## 🐳 Docker Setup (Alternative)
 
-Run both API and PostgreSQL in containers:
+Run the API in a container (database is managed by Supabase):
 
 ```bash
-docker-compose up --build
+docker build -t cognisense-backend .
+docker run -p 8000:8000 --env-file .env cognisense-backend
 ```
 
-This starts:
-- **API**: http://localhost:8000
-- **PostgreSQL**: localhost:5432
+This starts the API at: http://localhost:8000
 
 ---
 
@@ -200,40 +196,9 @@ POST /api/v1/content/analyze
 
 ---
 
-## 🚧 TODO (Next Steps)
+## 📋 Development Roadmap
 
-### Database & Models
-- [ ] Create SQLModel database models (User, BrowsingSession, ContentSnapshot, etc.)
-- [ ] Set up Alembic migrations
-- [ ] Implement database session management
-
-### Authentication
-- [ ] Integrate FastAPI-Users
-- [ ] Create auth endpoints (register, login, logout)
-- [ ] Add JWT token authentication to protected routes
-
-### API Endpoints
-- [ ] Tracking endpoints (`POST /tracking`, time logging)
-- [ ] Categories endpoints (user site classifications)
-- [ ] Dashboard endpoints (daily/weekly stats)
-- [ ] User profile endpoints
-
-### Services Layer
-- [ ] `content_service.py` - Content analysis orchestration
-- [ ] `tracking_service.py` - Session tracking logic
-- [ ] `aggregation_service.py` - Compute summaries
-- [ ] `recommendation_service.py` - Generate suggestions
-
-### Testing
-- [ ] Unit tests for ML services
-- [ ] Integration tests for API endpoints
-- [ ] Test fixtures and mock data
-
-### Deployment
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Deploy to Railway/Render
-- [ ] Set up production database
-- [ ] Configure production environment variables
+For detailed development tasks and roadmap, see [TODO.md](TODO.md).
 
 ---
 
