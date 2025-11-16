@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     
-    # ML Models
+    # ML Models - using smallest available models for development
     MODEL_CACHE_DIR: str = "./models"
-    SENTIMENT_MODEL: str = "distilbert-base-uncased-finetuned-sst-2-english"
-    ZERO_SHOT_MODEL: str = "facebook/bart-large-mnli"
+    SENTIMENT_MODEL: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"  # Small sentiment model
+    ZERO_SHOT_MODEL: str = "facebook/bart-large-mnli"  # Standard zero-shot model
     
     # Environment
     ENVIRONMENT: str = "development"
