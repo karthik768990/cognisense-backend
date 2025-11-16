@@ -41,7 +41,6 @@ class ActivityIn(BaseModel):
     clicks: int = 0
     keypresses: int = 0
     engagement_score: Optional[float] = None
-    category_override: Optional[str] = None
 
 
 @router.post("/ingest")
@@ -64,6 +63,31 @@ async def ingest_activity(payload: ActivityIn):
         except Exception:
             record["duration_seconds"] = None
 
+    # Determine domain and any user-configured category override
+    parsed = urlparse(record["url"]) if record.get("url") else None
+    domain = (parsed.netloc or "").lower() if parsed else None
+    override_category: Optional[str] = None
+    try:
+        if supabase is not None and record.get("user_id") and domain:
+            rules_resp = supabase.table("user_domain_categories").select("domain_pattern,category,priority").eq("user_id", record["user_id"]).execute()
+            rules = getattr(rules_resp, "data", []) or []
+
+            def pattern_matches(d: str, pat: str) -> bool:
+                p = (pat or "").lower().strip()
+                p = p.replace("http://", "").replace("https://", "")
+                p = p.lstrip("*.")
+                if not p:
+                    return False
+                return d == p or d.endswith("." + p) or d.endswith(p)
+
+            matches = [r for r in rules if pattern_matches(domain, r.get("domain_pattern", ""))]
+            if matches:
+                # Highest priority first, then longest pattern wins
+                matches.sort(key=lambda r: (-(r.get("priority") or 1), -len((r.get("domain_pattern") or ""))))
+                override_category = matches[0].get("category")
+    except Exception as e:
+        logger.debug(f"Failed to resolve category override: {e}")
+
     # Fetch page content (if text not already provided) using the scraper service
     page_text: Optional[str] = record.get("text")
     if not page_text:
@@ -85,14 +109,16 @@ async def ingest_activity(payload: ActivityIn):
                 text=page_text,
                 url=record.get("url"),
                 analyze_sentiment=True,
-                analyze_category=True,
+                analyze_category=False if override_category else True,
                 analyze_emotions=True,
             )
             # Attach key fields back into the record for immediate use/echo
             if isinstance(analysis_result, dict):
                 if "sentiment" in analysis_result:
                     record["sentiment"] = analysis_result["sentiment"]
-                if "category" in analysis_result:
+                if override_category:
+                    record["classified_category"] = override_category
+                elif "category" in analysis_result:
                     record["classified_category"] = analysis_result["category"].get("primary")
                     record["classified_scores"] = analysis_result["category"].get("all_categories", [])
                 if "emotions" in analysis_result:
@@ -113,14 +139,17 @@ async def ingest_activity(payload: ActivityIn):
         except Exception as e:
             logger.debug(f"Sentiment analysis failed: {e}")
 
-        try:
-            cat = zero_shot.classify_with_group(record["text"])
-            if not cat.get("error"):
-                record["classified_category"] = cat.get("labels", [None])[0]
-                record["category_group"] = cat.get("category_group")
-                record["classified_scores"] = cat.get("scores", [])
-        except Exception as e:
-            logger.debug(f"Category classification failed: {e}")
+        if override_category:
+            record["classified_category"] = override_category
+        else:
+            try:
+                cat = zero_shot.classify_with_group(record["text"])
+                if not cat.get("error"):
+                    record["classified_category"] = cat.get("labels", [None])[0]
+                    record["category_group"] = cat.get("category_group")
+                    record["classified_scores"] = cat.get("scores", [])
+            except Exception as e:
+                logger.debug(f"Category classification failed: {e}")
 
         try:
             emotions = emotion_detector.detect(record["text"])
@@ -219,14 +248,14 @@ async def _persist_to_database(record: dict, analysis_result: Optional[dict]):
         logger.warning(f"Failed to insert page_view_sessions: {e}")
 
     # Prepare content_analysis upsert if analysis available
-    if analysis_result and isinstance(analysis_result, dict):
+    if (analysis_result and isinstance(analysis_result, dict)) or record.get("classified_category"):
         try:
-            emotions = (analysis_result.get("emotions") or {}).get("all_emotions") or []
+            emotions = ((analysis_result or {}).get("emotions") or {}).get("all_emotions") or []
             # index by label
             emo_map = {str(e.get("label")).lower(): float(e.get("score", 0.0)) for e in emotions if isinstance(e, dict)}
-            dom = (analysis_result.get("emotions") or {}).get("dominant") or {}
+            dom = ((analysis_result or {}).get("emotions") or {}).get("dominant") or {}
             dominant_label = dom.get("label") if isinstance(dom, dict) else None
-            category_primary = (analysis_result.get("category") or {}).get("primary")
+            category_primary = ((analysis_result or {}).get("category") or {}).get("primary") or record.get("classified_category")
 
             analysis_payload = {
                 "user_id": user_id,
