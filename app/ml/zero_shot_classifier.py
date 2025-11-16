@@ -15,15 +15,78 @@ class ZeroShotClassifier:
     
     # Default categories for content classification
     DEFAULT_CATEGORIES = [
+        # Productivity & Work
         "Productivity",
+        "Work",
+        "Professional Development",
+        "Business",
+        "Documentation",
+        
+        # Social & Communication
         "Social Media",
+        "Communication",
+        "Forums & Discussion",
+        "Dating",
+        
+        # Entertainment & Media
         "Entertainment",
+        "Music",
+        "Movies & TV",
+        "Gaming",
+        "Sports",
+        "Humor & Memes",
+        "Podcasts",
+        "Streaming",
+        
+        # News & Information
         "News",
-        "Shopping",
-        "Education",
-        "Health & Wellness",
+        "Politics",
+        "World Events",
+        "Science",
         "Technology",
+        "Research",
+        
+        # Education & Learning
+        "Education",
+        "Online Courses",
+        "Tutorials",
+        "Academic",
+        "Programming",
+        "Self-Improvement",
+        
+        # Lifestyle & Personal
+        "Health & Wellness",
+        "Fitness",
+        "Food & Cooking",
+        "Travel",
+        "Hobbies",
+        "DIY & Crafts",
+        "Fashion & Beauty",
+        "Relationships",
+        "Parenting",
+        
+        # Finance & Commerce
         "Finance",
+        "Shopping",
+        "E-commerce",
+        "Banking",
+        "Investing",
+        "Cryptocurrency",
+        
+        # Reference & Tools
+        "Reference",
+        "Tools & Utilities",
+        "Software",
+        "Documentation",
+        "Search",
+        
+        # Negative/Problematic Content
+        "Adult Content",
+        "Violence",
+        "Misinformation",
+        "Harassment",
+        
+        # Default
         "Other"
     ]
     
@@ -92,3 +155,67 @@ class ZeroShotClassifier:
         """
         categories = ["Productive", "Distracting"]
         return self.classify(text, categories=categories)
+    
+    def get_category_groups(self) -> Dict[str, List[str]]:
+        """
+        Return categories organized by broad groups for dashboard analytics
+        
+        Returns:
+            Dictionary mapping group names to lists of categories
+        """
+        return {
+            "Productive": [
+                "Productivity", "Work", "Professional Development", "Business", 
+                "Documentation", "Education", "Online Courses", "Tutorials", 
+                "Academic", "Programming", "Research", "Reference", "Tools & Utilities"
+            ],
+            "Social": [
+                "Social Media", "Communication", "Forums & Discussion", "Dating"
+            ],
+            "Entertainment": [
+                "Entertainment", "Music", "Movies & TV", "Gaming", "Sports", 
+                "Humor & Memes", "Podcasts", "Streaming"
+            ],
+            "Information": [
+                "News", "Politics", "World Events", "Science", "Technology"
+            ],
+            "Lifestyle": [
+                "Health & Wellness", "Fitness", "Food & Cooking", "Travel", 
+                "Hobbies", "DIY & Crafts", "Fashion & Beauty", "Relationships", 
+                "Parenting", "Self-Improvement"
+            ],
+            "Commerce": [
+                "Finance", "Shopping", "E-commerce", "Banking", "Investing", "Cryptocurrency"
+            ],
+            "Problematic": [
+                "Adult Content", "Violence", "Misinformation", "Harassment"
+            ],
+            "Other": ["Other", "Search", "Software"]
+        }
+    
+    def classify_with_group(self, text: str) -> Dict[str, any]:
+        """
+        Classify text and also return the broad category group
+        
+        Args:
+            text: Text content to classify
+            
+        Returns:
+            Dictionary with classification and group information
+        """
+        result = self.classify(text)
+        if result.get("error"):
+            return result
+            
+        # Find the group for the top category
+        groups = self.get_category_groups()
+        top_category = result["labels"][0]
+        category_group = "Other"
+        
+        for group, categories in groups.items():
+            if top_category in categories:
+                category_group = group
+                break
+                
+        result["category_group"] = category_group
+        return result
