@@ -30,10 +30,18 @@ All endpoints are versioned under `/api/v1/`
 - User-customizable site preferences
 - Intelligent content classification
 
-### 📈 **Dashboard Analytics**
-- Time-based activity summaries (daily/weekly)
-- Site usage breakdowns
-- Sentiment and category distributions
+### 📈 **Enhanced Dashboard Analytics**
+- **Main Dashboard**: Weekly activity summaries with trend analysis and improvement tracking
+- **Insights & Alerts**: Intelligent notifications about usage patterns, limits, and progress
+- **Settings Management**: Domain categorization and time limit configuration
+- **Health Scoring**: Overall digital wellness metrics and recommendations
+- **Progress Tracking**: Goal-based progress monitoring with actionable insights
+- **Emotional Analysis**: Content consumption emotional balance tracking
+
+### 🔐 **Authentication & Security**
+- Supabase-powered user authentication
+- JWT token-based secure API access
+- User-specific data isolation and privacy
 
 ---
 
@@ -479,71 +487,191 @@ Retrieves user's site categorization preferences.
 
 ### Dashboard Analytics
 
-#### GET /api/v1/dashboard/summary/{user_id}
+#### GET /api/v1/dashboard
+
+Returns main dashboard summary with time-based activity aggregation.
+
+**Authentication Required:** Yes
+
+**Query Parameters:**
+- `timeRange` (optional): "this_week" or "last_week" (default: "this_week")
+
+**Request:**
+- Headers: `Authorization: Bearer <token>`
+
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard?timeRange=this_week" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+    "user": {
+        "id": "user-uuid",
+        "displayName": "John Doe",
+        "email": "user@example.com"
+    },
+    "timeRange": "this_week",
+    "metrics": [
+        {
+            "title": "Total Time",
+            "value": 14400,
+            "change_percent": 15.5,
+            "trend": "up",
+            "improvement_label": "slightly_better"
+        },
+        {
+            "title": "Productive Time",
+            "value": 7200,
+            "change_percent": 25.0,
+            "trend": "up",
+            "improvement_label": "much_better"
+        },
+        {
+            "title": "Social Time",
+            "value": 3600,
+            "change_percent": -10.0,
+            "trend": "down",
+            "improvement_label": "slightly_better"
+        },
+        {
+            "title": "Entertainment Time",
+            "value": 3600,
+            "change_percent": 5.0,
+            "trend": "up",
+            "improvement_label": "no_change"
+        }
+    ],
+    "weeklyData": [
+        {"day": "Mon", "Productive": 1200, "Social": 600, "Entertainment": 400},
+        {"day": "Tue", "Productive": 1000, "Social": 500, "Entertainment": 600},
+        {"day": "Wed", "Productive": 1100, "Social": 400, "Entertainment": 500},
+        {"day": "Thu", "Productive": 1300, "Social": 700, "Entertainment": 600},
+        {"day": "Fri", "Productive": 900, "Social": 800, "Entertainment": 700},
+        {"day": "Sat", "Productive": 800, "Social": 300, "Entertainment": 900},
+        {"day": "Sun", "Productive": 1100, "Social": 300, "Entertainment": 400}
+    ]
+}
+```
+
+#### GET /api/v1/dashboard/insights
+
+Provides detailed insights, alerts, and progress tracking.
+
+**Authentication Required:** Yes
+
+**Query Parameters:**
+- `timeRange` (optional): "this_week" or "last_week" (default: "this_week")
+
+**Response:**
+```json
+{
+    "timeRange": "this_week",
+    "summary": {
+        "overallHealthScore": 75,
+        "productiveTimeRatio": 50,
+        "weeklyImprovementPercent": 15
+    },
+    "alerts": [
+        {
+            "id": "alert_progress",
+            "type": "success",
+            "title": "Great Progress!",
+            "description": "Great job! Your productive screen time increased by 15% compared to last period."
+        },
+        {
+            "id": "alert_social_limit",
+            "type": "warning",
+            "title": "Social Media Limit",
+            "description": "Your usage for 'twitter.com' is 25% above your target for this period. Consider setting app limits."
+        }
+    ],
+    "weeklyProgress": [
+        {
+            "goalId": "reduce_social_media",
+            "label": "Reduce Social Media Time",
+            "progressPercent": 65
+        },
+        {
+            "goalId": "increase_productive_hours",
+            "label": "Increase Productive Hours",
+            "progressPercent": 75
+        },
+        {
+            "goalId": "diversify_content",
+            "label": "Diversify Content Sources",
+            "progressPercent": 40
+        }
+    ],
+    "emotionalBalance": {
+        "balanceScore": 72,
+        "segments": [
+            {"type": "positive", "value": 45.2},
+            {"type": "neutral", "value": 35.8},
+            {"type": "negative", "value": 19.0},
+            {"type": "biased", "value": 0}
+        ]
+    },
+    "contentCategories": [
+        {"category": "technology", "percentage": 35.5},
+        {"category": "entertainment", "percentage": 25.0},
+        {"category": "news", "percentage": 20.0},
+        {"category": "social", "percentage": 15.5},
+        {"category": "other", "percentage": 4.0}
+    ]
+}
+```
+
+#### GET /api/v1/dashboard/settings
+
+Returns user's domain categorization and time limit settings.
+
+**Authentication Required:** Yes
+
+**Response:**
+```json
+{
+    "websites": [
+        {
+            "name": "github.com",
+            "category": "productive",
+            "limit": 480
+        },
+        {
+            "name": "twitter.com",
+            "category": "social",
+            "limit": 60
+        },
+        {
+            "name": "youtube.com",
+            "category": "entertainment",
+            "limit": 120
+        },
+        {
+            "name": "stackoverflow.com",
+            "category": null,
+            "limit": null
+        }
+    ]
+}
+```
+
+#### GET /api/v1/dashboard/summary/{user_id} **(Deprecated)**
+
+*Note: This endpoint is being replaced by the new authenticated dashboard endpoints above.*
 
 Provides aggregated activity summary with time-based filtering.
 
 **Query Parameters:**
 - `period` (optional): "daily" or "weekly" (default: "weekly")
 
-**Example:**
-```bash
-curl "http://localhost:8000/api/v1/dashboard/summary/user123?period=daily"
-```
+#### GET /api/v1/dashboard/sites/{user_id} **(Deprecated)**
 
-**Response:**
-```json
-{
-    "user_id": "user123",
-    "summary": {
-        "period": "daily",
-        "records_counted": 25,
-        "total_time_seconds": 14400.0,
-        "top_sites": [
-            {"site": "https://github.com", "time_seconds": 7200.0},
-            {"site": "https://stackoverflow.com", "time_seconds": 3600.0},
-            {"site": "https://youtube.com", "time_seconds": 2400.0}
-        ],
-        "categories": [
-            {"category": "Programming", "value": 10800.0, "proportion": 0.75},
-            {"category": "Learning", "value": 2400.0, "proportion": 0.167},
-            {"category": "Entertainment", "value": 1200.0, "proportion": 0.083}
-        ],
-        "sentiments": [
-            {"sentiment": "POSITIVE", "count": 20, "proportion": 0.8},
-            {"sentiment": "NEUTRAL", "count": 5, "proportion": 0.2}
-        ]
-    }
-}
-```
-
-#### GET /api/v1/dashboard/sites/{user_id}
+*Note: This endpoint is being replaced by the new authenticated dashboard endpoints above.*
 
 Returns table view of sites with aggregated metrics.
-
-**Query Parameters:**
-- `limit` (optional): Maximum sites to return (1-1000, default: 100)
-
-**Response:**
-```json
-{
-    "user_id": "user123",
-    "sites": [
-        {
-            "site": "https://github.com",
-            "time_seconds": 7200.0,
-            "visits": 15,
-            "category": "Programming"
-        },
-        {
-            "site": "https://stackoverflow.com", 
-            "time_seconds": 3600.0,
-            "visits": 8,
-            "category": "Learning"
-        }
-    ]
-}
-```
 
 ---
 
