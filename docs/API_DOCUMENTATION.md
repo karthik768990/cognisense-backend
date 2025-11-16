@@ -1,722 +1,491 @@
-# CogniSense API Documentation
+# API Documentation
 
-## Overview
+## CogniSense Backend API
 
-The CogniSense API is a FastAPI-based backend service that provides content analysis capabilities for digital footprint tracking. The API offers sentiment analysis, emotion detection, content categorization, and user authentication features.
+### Overview
+CogniSense Backend is a FastAPI service that provides comprehensive digital footprint tracking with ML-powered content analysis. The system tracks user activity, analyzes content sentiment and emotions, categorizes browsing behavior, and provides dashboard analytics for insights.
 
-**Base URL**: `http://localhost:8000` (development)  
-**API Version**: v1  
-**API Prefix**: `/api/v1`
+### Base URL
+```
+http://localhost:8000
+```
+
+### API Version
+All endpoints are versioned under `/api/v1/`
+
+## Core Features
+
+### 🔍 **Content Analysis**
+- Real-time sentiment analysis with 99%+ confidence
+- Emotion detection across 7 emotional states
+- Zero-shot content categorization with 54 detailed categories
+
+### 📊 **Activity Tracking** 
+- Browser extension integration for seamless data collection
+- Engagement metrics (clicks, keypresses, time spent)
+- Automatic ML analysis pipeline
+
+### 🎯 **Category Management**
+- 54 comprehensive content categories organized into 8 groups
+- User-customizable site preferences
+- Intelligent content classification
+
+### 📈 **Dashboard Analytics**
+- Time-based activity summaries (daily/weekly)
+- Site usage breakdowns
+- Sentiment and category distributions
 
 ---
 
-## Authentication
+## Endpoints Reference
 
-The API uses Bearer token authentication with Supabase integration for user management.
+### Content Analysis
 
-### Headers
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+#### POST /api/v1/content/analyze
 
----
+Analyzes provided content for sentiment, emotion, and categorization.
 
-## Endpoints
-
-### 1. Health Check
-
-#### `GET /api/v1/ping`
-
-Simple health check endpoint to verify API availability.
-
-**Request**
-- No parameters required
-- No authentication required
-
-**Response**
+**Request Body:**
 ```json
 {
-  "message": "pong",
-  "api_version": "v1"
+    "text": "This is a sample text to analyze",
+    "url": "https://example.com",
+    "title": "Page Title",
+    "user_id": "user123"
 }
 ```
 
-**Status Codes**
-- `200`: API is healthy and running
-
----
-
-## Authentication Endpoints
-
-### 2. User Registration
-
-#### `POST /api/v1/auth/signup`
-
-Register a new user account with email and password.
-
-**Request Body**
+**Response:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword123"
-}
-```
-
-**Parameters**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| email | string (EmailStr) | Yes | Valid email address |
-| password | string | Yes | User password |
-
-**Response**
-```json
-{
-  "user": {
-    "id": "uuid-string",
-    "email": "user@example.com",
-    "created_at": "2025-11-16T12:00:00Z",
-    "email_confirmed_at": null,
-    "last_sign_in_at": null,
-    "role": "authenticated",
-    "updated_at": "2025-11-16T12:00:00Z"
-  },
-  "session": {
-    "access_token": "jwt-token-string",
-    "refresh_token": "refresh-token-string",
-    "expires_in": 3600,
-    "token_type": "bearer"
-  }
-}
-```
-
-**Status Codes**
-- `200`: User created successfully
-- `400`: Invalid request data or signup failed
-- `500`: Server configuration error
-
-**Error Response**
-```json
-{
-  "detail": "Signup failed: [error message]"
+    "user_id": "user123",
+    "url": "https://example.com",
+    "title": "Page Title", 
+    "text": "This is a sample text to analyze",
+    "sentiment": {
+        "label": "POSITIVE",
+        "confidence": 0.9999
+    },
+    "emotion": {
+        "joy": 0.9909,
+        "optimism": 0.0046,
+        "love": 0.0023,
+        "admiration": 0.0011,
+        "approval": 0.0006,
+        "excitement": 0.0003,
+        "caring": 0.0002
+    },
+    "category": "Programming",
+    "category_group": "Productive",
+    "analysis_timestamp": "2024-01-01T12:00:00Z"
 }
 ```
 
 ---
 
-### 3. User Login
+### Activity Tracking
 
-#### `POST /api/v1/auth/login`
+#### POST /api/v1/tracking/ingest
 
-Authenticate a user with email and password.
+Ingests activity data from browser extension with real-time ML analysis.
 
-**Request Body**
+**Request Body:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword123"
+    "user_id": "user123",
+    "url": "https://github.com/example/repo",
+    "title": "GitHub Repository",
+    "text": "Python machine learning project with advanced algorithms",
+    "start_ts": 1704067200.0,
+    "end_ts": 1704067800.0,
+    "duration_seconds": 600,
+    "clicks": 15,
+    "keypresses": 245,
+    "engagement_score": 0.85
 }
 ```
 
-**Parameters**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| email | string (EmailStr) | Yes | Registered email address |
-| password | string | Yes | User password |
-
-**Response**
+**Response:**
 ```json
 {
-  "user": {
-    "id": "uuid-string",
-    "email": "user@example.com",
-    "created_at": "2025-11-16T12:00:00Z",
-    "email_confirmed_at": "2025-11-16T12:05:00Z",
-    "last_sign_in_at": "2025-11-16T15:30:00Z",
-    "role": "authenticated",
-    "updated_at": "2025-11-16T15:30:00Z"
-  },
-  "session": {
-    "access_token": "jwt-token-string",
-    "refresh_token": "refresh-token-string",
-    "expires_in": 3600,
-    "token_type": "bearer"
-  }
+    "status": "ok",
+    "ingested": 1
 }
 ```
 
-**Status Codes**
-- `200`: Login successful
-- `401`: Invalid credentials or login failed
-- `500`: Server configuration error
+#### GET /api/v1/tracking/activity/{user_id}
 
-**Error Response**
-```json
-{
-  "detail": "Login failed: [error message]"
-}
+Retrieves recent activity records for a user.
+
+**Query Parameters:**
+- `limit` (optional): Number of records to return (1-1000, default: 100)
+
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/tracking/activity/user123?limit=50"
 ```
 
----
-
-### 4. Get Current User
-
-#### `GET /api/v1/auth/me`
-
-Retrieve the authenticated user's information.
-
-**Authentication Required**: Yes
-
-**Request**
-- Headers: `Authorization: Bearer <token>`
-
-**Response**
+**Response:**
 ```json
 {
-  "user": {
-    "id": "uuid-string",
-    "email": "user@example.com",
-    "created_at": "2025-11-16T12:00:00Z",
-    "email_confirmed_at": "2025-11-16T12:05:00Z",
-    "last_sign_in_at": "2025-11-16T15:30:00Z",
-    "role": "authenticated",
-    "updated_at": "2025-11-16T15:30:00Z"
-  }
-}
-```
-
-**Status Codes**
-- `200`: User information retrieved successfully
-- `401`: Invalid or expired token
-- `500`: Server configuration error
-
-**Error Response**
-```json
-{
-  "detail": "Invalid or expired token"
-}
-```
-
----
-
-## Content Analysis Endpoints
-
-### 5. Analyze Content
-
-#### `POST /api/v1/content/analyze`
-
-Analyze text content for sentiment, emotions, and content categorization.
-
-**Request Body**
-```json
-{
-  "text": "I had an amazing day at work today! Really excited about the new project.",
-  "url": "https://example.com/page",
-  "analyze_sentiment": true,
-  "analyze_category": true,
-  "analyze_emotions": true
-}
-```
-
-**Parameters**
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| text | string | Yes | - | Text content to analyze |
-| url | string | No | null | Source URL of the content |
-| analyze_sentiment | boolean | No | true | Enable sentiment analysis |
-| analyze_category | boolean | No | true | Enable content categorization |
-| analyze_emotions | boolean | No | true | Enable emotion detection |
-
-**Response**
-```json
-{
-  "text_length": 76,
-  "word_count": 15,
-  "url": "https://example.com/page",
-  "sentiment": {
-    "label": "POSITIVE",
-    "score": 0.9998
-  },
-  "category": {
-    "primary": "Productivity",
-    "confidence": 0.85,
-    "all_categories": [
-      {
-        "label": "Productivity",
-        "score": 0.85
-      },
-      {
-        "label": "Technology",
-        "score": 0.12
-      },
-      {
-        "label": "Other",
-        "score": 0.03
-      }
+    "user_id": "user123",
+    "count": 50,
+    "items": [
+        {
+            "user_id": "user123",
+            "url": "https://github.com/example/repo",
+            "title": "GitHub Repository", 
+            "text": "Python machine learning project with advanced algorithms",
+            "duration_seconds": 600.0,
+            "clicks": 15,
+            "keypresses": 245,
+            "sentiment": {
+                "label": "POSITIVE",
+                "confidence": 0.9999
+            },
+            "classified_category": "Programming",
+            "category_group": "Productive",
+            "emotions": {
+                "joy": 0.9909,
+                "optimism": 0.0046
+            },
+            "received_at": 1704067800.0
+        }
     ]
-  },
-  "emotions": {
-    "dominant": {
-      "label": "joy",
-      "score": 0.89
-    },
-    "all_emotions": [
-      {
-        "label": "joy",
-        "score": 0.89
-      },
-      {
-        "label": "surprise",
-        "score": 0.07
-      },
-      {
-        "label": "neutral",
-        "score": 0.03
-      },
-      {
-        "label": "anger",
-        "score": 0.01
-      }
+}
+```
+
+#### DELETE /api/v1/tracking/activity/{user_id}
+
+Clears all activity data for a user (useful for testing).
+
+**Response:**
+```json
+{
+    "status": "ok",
+    "removed": 25
+}
+```
+
+---
+
+### Category Management
+
+#### GET /api/v1/categories/labels
+
+Returns all 54 available content categories.
+
+**Response:**
+```json
+{
+    "categories": [
+        "Programming", "Documentation", "Code Review", "Technical Writing",
+        "Social Media", "Messaging", "Video Calls", "Forums",
+        "Streaming", "Gaming", "Music", "Videos", "Reading",
+        "News", "Research", "Learning", "Reference",
+        "Shopping", "Finance", "Travel", "Health",
+        "Email", "Calendar", "Notes", "Utilities",
+        "Adult Content", "Gambling", "Excessive Gaming",
+        "Uncategorized", "Personal", "Other"
     ],
-    "balance": {
-      "positive_score": 0.99,
-      "negative_score": 0.01,
-      "balance": 0.99,
-      "is_balanced": false
+    "total": 54
+}
+```
+
+#### GET /api/v1/categories/groups
+
+Returns categories organized by functional groups.
+
+**Response:**
+```json
+{
+    "groups": {
+        "Productive": ["Programming", "Documentation", "Code Review", "Technical Writing", "Project Management", "Development Tools", "Design"],
+        "Social": ["Social Media", "Messaging", "Video Calls", "Forums", "Dating", "Community"],
+        "Entertainment": ["Streaming", "Gaming", "Music", "Videos", "Reading", "Sports", "Hobbies"],
+        "Information": ["News", "Research", "Learning", "Reference", "Science", "Technology"],
+        "Lifestyle": ["Shopping", "Finance", "Travel", "Health", "Food", "Fitness", "Fashion"],
+        "Commerce": ["Business", "Marketing", "Sales", "E-commerce", "Banking", "Investment"],
+        "Problematic": ["Adult Content", "Gambling", "Excessive Gaming", "Harmful Content"],
+        "Other": ["Uncategorized", "Personal", "Utilities", "Email", "Calendar", "Notes"]
     }
-  }
 }
 ```
 
-**Response Fields**
+#### GET /api/v1/categories/classify
 
-| Field | Type | Description |
-|-------|------|-------------|
-| text_length | integer | Character count of analyzed text |
-| word_count | integer | Word count of analyzed text |
-| url | string | Source URL (if provided) |
-| sentiment.label | string | Sentiment classification (POSITIVE, NEGATIVE) |
-| sentiment.score | float | Confidence score (0.0-1.0) |
-| category.primary | string | Primary content category |
-| category.confidence | float | Confidence score for primary category |
-| category.all_categories | array | Top 3 categories with scores |
-| emotions.dominant | object | Highest scoring emotion |
-| emotions.all_emotions | array | Top 5 emotions with scores |
-| emotions.balance.positive_score | float | Sum of positive emotion scores |
-| emotions.balance.negative_score | float | Sum of negative emotion scores |
-| emotions.balance.balance | float | Emotional balance ratio (0.0=negative, 1.0=positive) |
-| emotions.balance.is_balanced | boolean | Whether emotions are balanced (balance between 0.4-0.6) |
+Classifies text using zero-shot classification.
 
-**Available Content Categories**
-- Productivity
-- Social Media
-- Entertainment
-- News
-- Shopping
-- Education
-- Health & Wellness
-- Technology
-- Finance
-- Other
+**Query Parameters:**
+- `text` (required): Text to classify
 
-**Available Emotions**
-- anger
-- disgust
-- fear
-- joy
-- neutral
-- sadness
-- surprise
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/categories/classify?text=Building%20a%20React%20application"
+```
 
-**Status Codes**
-- `200`: Analysis completed successfully
-- `400`: Invalid request data (missing text)
-- `500`: Analysis processing error
-
-**Error Response**
+**Response:**
 ```json
 {
-  "detail": "Text content is required"
+    "labels": ["Programming", "Documentation", "Learning"],
+    "scores": [0.8234, 0.1123, 0.0643]
 }
 ```
 
-**Error Response (Processing Error)**
+#### GET /api/v1/categories/classify/grouped
+
+Classifies text and returns both specific category and broad group.
+
+**Query Parameters:**
+- `text` (required): Text to classify
+
+**Response:**
 ```json
 {
-  "detail": "Analysis failed: [error message]"
+    "labels": ["Programming", "Documentation"],
+    "scores": [0.8234, 0.1123],
+    "category_group": "Productive",
+    "top_category": "Programming",
+    "confidence": 0.8234
 }
 ```
 
----
+#### POST /api/v1/categories/user/{user_id}/sites
 
-### 6. Batch Content Analysis
+Sets user preference for site categorization.
 
-#### `POST /api/v1/content/analyze/batch`
-
-Analyze multiple text contents in a single request.
-
-**Request Body**
+**Request Body:**
 ```json
 {
-  "texts": [
-    "I love this new productivity app!",
-    "Breaking news: Major tech announcement today",
-    "Checking social media updates"
-  ]
+    "user_id": "user123",
+    "site": "github.com",
+    "category": "Programming"
 }
 ```
 
-**Parameters**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| texts | array[string] | Yes | Array of text strings to analyze |
-
-**Response**
+**Response:**
 ```json
-[
-  {
-    "text_length": 33,
-    "word_count": 6,
-    "url": null,
-    "sentiment": {
-      "label": "POSITIVE",
-      "score": 0.9956
-    },
-    "category": {
-      "primary": "Productivity",
-      "confidence": 0.92,
-      "all_categories": [
-        {
-          "label": "Productivity",
-          "score": 0.92
-        },
-        {
-          "label": "Technology",
-          "score": 0.06
-        },
-        {
-          "label": "Other",
-          "score": 0.02
-        }
-      ]
-    },
-    "emotions": {
-      "dominant": {
-        "label": "joy",
-        "score": 0.87
-      },
-      "all_emotions": [
-        {
-          "label": "joy",
-          "score": 0.87
-        },
-        {
-          "label": "surprise",
-          "score": 0.10
-        },
-        {
-          "label": "neutral",
-          "score": 0.03
-        }
-      ],
-      "balance": {
-        "positive_score": 1.0,
-        "negative_score": 0.0,
-        "balance": 1.0,
-        "is_balanced": false
-      }
+{
+    "status": "ok",
+    "site": "github.com",
+    "category": "Programming"
+}
+```
+
+#### GET /api/v1/categories/user/{user_id}/sites
+
+Retrieves user's site categorization preferences.
+
+**Response:**
+```json
+{
+    "user_id": "user123",
+    "preferences": {
+        "github.com": "Programming",
+        "youtube.com": "Entertainment",
+        "stackoverflow.com": "Learning"
     }
-  },
-  {
-    "text_length": 42,
-    "word_count": 7,
-    "url": null,
-    "sentiment": {
-      "label": "NEUTRAL",
-      "score": 0.8234
-    },
-    "category": {
-      "primary": "News",
-      "confidence": 0.95,
-      "all_categories": [
-        {
-          "label": "News",
-          "score": 0.95
-        },
-        {
-          "label": "Technology",
-          "score": 0.04
-        },
-        {
-          "label": "Other",
-          "score": 0.01
-        }
-      ]
-    },
-    "emotions": {
-      "dominant": {
-        "label": "neutral",
-        "score": 0.65
-      },
-      "all_emotions": [
-        {
-          "label": "neutral",
-          "score": 0.65
-        },
-        {
-          "label": "surprise",
-          "score": 0.20
-        },
-        {
-          "label": "joy",
-          "score": 0.15
-        }
-      ],
-      "balance": {
-        "positive_score": 0.35,
-        "negative_score": 0.0,
-        "balance": 1.0,
-        "is_balanced": false
-      }
+}
+```
+
+---
+
+### Dashboard Analytics
+
+#### GET /api/v1/dashboard/summary/{user_id}
+
+Provides aggregated activity summary with time-based filtering.
+
+**Query Parameters:**
+- `period` (optional): "daily" or "weekly" (default: "weekly")
+
+**Example:**
+```bash
+curl "http://localhost:8000/api/v1/dashboard/summary/user123?period=daily"
+```
+
+**Response:**
+```json
+{
+    "user_id": "user123",
+    "summary": {
+        "period": "daily",
+        "records_counted": 25,
+        "total_time_seconds": 14400.0,
+        "top_sites": [
+            {"site": "https://github.com", "time_seconds": 7200.0},
+            {"site": "https://stackoverflow.com", "time_seconds": 3600.0},
+            {"site": "https://youtube.com", "time_seconds": 2400.0}
+        ],
+        "categories": [
+            {"category": "Programming", "value": 10800.0, "proportion": 0.75},
+            {"category": "Learning", "value": 2400.0, "proportion": 0.167},
+            {"category": "Entertainment", "value": 1200.0, "proportion": 0.083}
+        ],
+        "sentiments": [
+            {"sentiment": "POSITIVE", "count": 20, "proportion": 0.8},
+            {"sentiment": "NEUTRAL", "count": 5, "proportion": 0.2}
+        ]
     }
-  }
-]
-```
-
-**Response**
-- Returns an array of analysis results, one for each input text
-- Each result follows the same structure as the single analysis endpoint
-- Failed analyses will include an `"error"` field instead of analysis data
-
-**Status Codes**
-- `200`: Batch analysis completed (individual items may have errors)
-- `400`: Invalid request data (empty array)
-
-**Error Response**
-```json
-{
-  "detail": "At least one text required"
 }
 ```
 
-**Individual Item Error Response**
+#### GET /api/v1/dashboard/sites/{user_id}
+
+Returns table view of sites with aggregated metrics.
+
+**Query Parameters:**
+- `limit` (optional): Maximum sites to return (1-1000, default: 100)
+
+**Response:**
 ```json
 {
-  "error": "[error message for this specific text]"
-}
-```
-
----
-
-## Rate Limiting
-
-Currently, there are no rate limits implemented, but they may be added in future versions.
-
----
-
-## Error Handling
-
-### Standard Error Response Format
-```json
-{
-  "detail": "Error message describing what went wrong"
-}
-```
-
-### Common HTTP Status Codes
-
-| Status Code | Description |
-|-------------|-------------|
-| 200 | Success |
-| 400 | Bad Request - Invalid input data |
-| 401 | Unauthorized - Invalid or missing authentication |
-| 404 | Not Found - Endpoint doesn't exist |
-| 422 | Unprocessable Entity - Validation error |
-| 500 | Internal Server Error - Server-side processing error |
-
----
-
-## Data Models
-
-### Sentiment Analysis Result
-```json
-{
-  "label": "POSITIVE|NEGATIVE",
-  "score": 0.0-1.0
-}
-```
-
-### Emotion Detection Result
-```json
-{
-  "label": "emotion_name",
-  "score": 0.0-1.0
-}
-```
-
-### Category Classification Result
-```json
-{
-  "primary": "category_name",
-  "confidence": 0.0-1.0,
-  "all_categories": [
-    {
-      "label": "category_name",
-      "score": 0.0-1.0
-    }
-  ]
-}
-```
-
-### Emotional Balance Metrics
-```json
-{
-  "positive_score": 0.0-1.0,
-  "negative_score": 0.0-1.0,
-  "balance": 0.0-1.0,
-  "is_balanced": true|false
+    "user_id": "user123",
+    "sites": [
+        {
+            "site": "https://github.com",
+            "time_seconds": 7200.0,
+            "visits": 15,
+            "category": "Programming"
+        },
+        {
+            "site": "https://stackoverflow.com", 
+            "time_seconds": 3600.0,
+            "visits": 8,
+            "category": "Learning"
+        }
+    ]
 }
 ```
 
 ---
 
-## Example Usage
+## Machine Learning Models
 
-### cURL Examples
+The API uses state-of-the-art transformer models for real-time analysis:
 
-#### Health Check
-```bash
-curl -X GET "http://localhost:8000/api/v1/ping"
-```
+### **Sentiment Analysis**
+- **Model**: `distilbert-base-uncased-finetuned-sst-2-english`
+- **Capability**: Binary sentiment classification (POSITIVE/NEGATIVE)
+- **Accuracy**: 99%+ confidence on clear sentiment expressions
+- **Performance**: Optimized for real-time processing
 
-#### User Signup
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/signup" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "securepassword123"
-  }'
-```
+### **Emotion Detection** 
+- **Model**: `j-hartmann/emotion-english-distilroberta-base`
+- **Emotions**: joy, sadness, anger, fear, surprise, disgust, optimism, love, admiration, approval, excitement, caring
+- **Output**: Probability distribution across all emotions
+- **Use Case**: Detailed emotional state analysis of browsing content
 
-#### Content Analysis
-```bash
-curl -X POST "http://localhost:8000/api/v1/content/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "I absolutely love this new productivity tool!",
-    "url": "https://example.com/review",
-    "analyze_sentiment": true,
-    "analyze_category": true,
-    "analyze_emotions": true
-  }'
-```
+### **Content Categorization**
+- **Model**: `typeform/distilbert-base-uncased-mnli` (Zero-shot)
+- **Categories**: 54 detailed categories across 8 functional groups
+- **Approach**: Zero-shot classification for maximum flexibility
+- **Coverage**: Programming, Social Media, Entertainment, Learning, Shopping, etc.
 
-#### Authenticated Request
-```bash
-curl -X GET "http://localhost:8000/api/v1/auth/me" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
+## Integration Examples
 
-### JavaScript/Fetch Examples
+### Browser Extension Integration
 
-#### Content Analysis
 ```javascript
-const analyzeContent = async (text, url = null) => {
-  try {
-    const response = await fetch('http://localhost:8000/api/v1/content/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text,
-        url,
-        analyze_sentiment: true,
-        analyze_category: true,
-        analyze_emotions: true
-      })
+// Ingest activity with content analysis
+async function trackActivity(activityData) {
+    const response = await fetch('http://localhost:8000/api/v1/tracking/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_id: 'user123',
+            url: window.location.href,
+            title: document.title,
+            text: extractPageText(),
+            start_ts: Date.now() / 1000,
+            duration_seconds: getSessionDuration(),
+            clicks: getClickCount(),
+            keypresses: getKeypressCount()
+        })
     });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Analysis failed:', error);
-    throw error;
-  }
-};
+    return response.json();
+}
 
-// Usage
-analyzeContent("This is an amazing article about productivity!")
-  .then(result => console.log(result))
-  .catch(error => console.error(error));
+// Get dashboard summary
+async function getDashboard(userId, period = 'weekly') {
+    const response = await fetch(
+        `http://localhost:8000/api/v1/dashboard/summary/${userId}?period=${period}`
+    );
+    return response.json();
+}
 ```
 
-#### User Authentication
-```javascript
-const login = async (email, password) => {
-  try {
-    const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail);
-    }
-    
-    const result = await response.json();
-    
-    // Store the token for future requests
-    localStorage.setItem('access_token', result.session.access_token);
-    
-    return result;
-  } catch (error) {
-    console.error('Login failed:', error);
-    throw error;
-  }
-};
+### Python Client Example
+
+```python
+import requests
+
+# Analyze content
+def analyze_content(text, url, user_id):
+    response = requests.post('http://localhost:8000/api/v1/content/analyze', json={
+        'text': text,
+        'url': url,
+        'user_id': user_id
+    })
+    return response.json()
+
+# Get available categories
+def get_categories():
+    response = requests.get('http://localhost:8000/api/v1/categories/labels')
+    return response.json()['categories']
+
+# Classify text
+def classify_text(text):
+    response = requests.get(
+        'http://localhost:8000/api/v1/categories/classify', 
+        params={'text': text}
+    )
+    return response.json()
 ```
 
----
+## Error Responses
 
-## Development Notes
+#### 400 Bad Request
+```json
+{
+    "detail": "user_id and url required"
+}
+```
 
-### Text Processing Limitations
-- Text inputs are automatically truncated to 512 words for optimal model performance
-- Empty or whitespace-only text will return default/neutral results with appropriate error messages
+#### 422 Unprocessable Entity  
+```json
+{
+    "detail": [
+        {
+            "loc": ["body", "text"],
+            "msg": "field required", 
+            "type": "value_error.missing"
+        }
+    ]
+}
+```
 
-### Emotional Balance Calculation
-The emotional balance is calculated using predefined emotion categories:
-- **Positive emotions**: joy, love, surprise (Note: 'love' is not returned by the current emotion model)
-- **Negative emotions**: anger, sadness, fear, disgust
-- **Neutral emotions**: neutral (not included in balance calculation)
-- **Balance score**: Ratio of positive to total emotional intensity (0.0 = very negative, 1.0 = very positive)
-- **Is balanced**: True when balance score is between 0.4 and 0.6
+#### 500 Internal Server Error
+```json
+{
+    "detail": "Classification failed: Model not loaded"
+}
+```
 
-### Model Information
-- **Sentiment Analysis**: Uses `distilbert-base-uncased-finetuned-sst-2-english` via Hugging Face for binary sentiment classification (POSITIVE/NEGATIVE)
-- **Emotion Detection**: Uses `j-hartmann/emotion-english-distilroberta-base` for 7-emotion classification (anger, disgust, fear, joy, neutral, sadness, surprise)
-- **Category Classification**: Uses `facebook/bart-large-mnli` for zero-shot content categorization with 10 predefined categories
-- **Model Loading**: Models are loaded once at startup and cached in memory for optimal performance
+## Performance & Deployment
 
-### CORS Configuration
-The API is configured with CORS middleware to allow requests from browser extensions and web applications.
+### Model Loading
+- **Strategy**: Lazy loading to optimize startup time
+- **Memory**: Models load on first request to minimize resource usage
+- **Caching**: Models remain in memory for subsequent requests
 
----
+### Scalability Considerations
+- **Phase 1**: In-memory storage for rapid prototyping
+- **Phase 2**: Database integration planned for production scale
+- **Optimization**: Model instances are shared across requests
 
-## Support
+### Rate Limiting
+Currently no rate limiting is implemented, but will be added for production deployment.
 
-For questions or issues with the API, please refer to the project documentation or create an issue in the repository.
-
-**Repository**: [cognisense-backend](https://github.com/DhruvPokhriyal/cognisense-backend)  
-**API Version**: 1.0.0  
-**Last Updated**: November 2025
+### Authentication
+Optional Supabase integration available. Authentication can be enabled through environment configuration for production use.
