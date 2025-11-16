@@ -39,6 +39,144 @@ All endpoints are versioned under `/api/v1/`
 
 ## Endpoints Reference
 
+### Health Check
+
+#### GET /api/v1/ping
+
+Simple health check endpoint to verify API availability.
+
+**Request:**
+- No parameters required
+- No authentication required
+
+**Response:**
+```json
+{
+    "message": "pong",
+    "api_version": "v1"
+}
+```
+
+**Status Codes:**
+- `200`: API is healthy and running
+
+---
+
+### Authentication
+
+#### POST /api/v1/auth/signup
+
+Register a new user account with email and password.
+
+**Request Body:**
+```json
+{
+    "email": "user@example.com",
+    "password": "securepassword123"
+}
+```
+
+**Parameters:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string (EmailStr) | Yes | Valid email address |
+| password | string | Yes | User password |
+
+**Response:**
+```json
+{
+    "user": {
+        "id": "uuid-string",
+        "email": "user@example.com",
+        "created_at": "2025-11-16T12:00:00Z",
+        "email_confirmed_at": null,
+        "last_sign_in_at": null,
+        "role": "authenticated",
+        "updated_at": "2025-11-16T12:00:00Z"
+    },
+    "session": {
+        "access_token": "jwt-token-string",
+        "refresh_token": "refresh-token-string",
+        "expires_in": 3600,
+        "token_type": "bearer"
+    }
+}
+```
+
+**Status Codes:**
+- `200`: User created successfully
+- `400`: Invalid request data or signup failed
+- `500`: Server configuration error
+
+#### POST /api/v1/auth/login
+
+Authenticate a user with email and password.
+
+**Request Body:**
+```json
+{
+    "email": "user@example.com",
+    "password": "securepassword123"
+}
+```
+
+**Response:**
+```json
+{
+    "user": {
+        "id": "uuid-string",
+        "email": "user@example.com",
+        "created_at": "2025-11-16T12:00:00Z",
+        "email_confirmed_at": "2025-11-16T12:05:00Z",
+        "last_sign_in_at": "2025-11-16T15:30:00Z",
+        "role": "authenticated",
+        "updated_at": "2025-11-16T15:30:00Z"
+    },
+    "session": {
+        "access_token": "jwt-token-string",
+        "refresh_token": "refresh-token-string",
+        "expires_in": 3600,
+        "token_type": "bearer"
+    }
+}
+```
+
+**Status Codes:**
+- `200`: Login successful
+- `401`: Invalid credentials or login failed
+- `500`: Server configuration error
+
+#### GET /api/v1/auth/me
+
+Retrieve the authenticated user's information.
+
+**Authentication Required:** Yes
+
+**Request:**
+- Headers: `Authorization: Bearer <token>`
+
+**Response:**
+```json
+{
+    "user": {
+        "id": "uuid-string",
+        "email": "user@example.com",
+        "created_at": "2025-11-16T12:00:00Z",
+        "email_confirmed_at": "2025-11-16T12:05:00Z",
+        "last_sign_in_at": "2025-11-16T15:30:00Z",
+        "role": "authenticated",
+        "updated_at": "2025-11-16T15:30:00Z"
+    }
+}
+```
+
+**Status Codes:**
+- `200`: User information retrieved successfully
+- `401`: Invalid or expired token
+- `500`: Server configuration error
+
+---
+
 ### Content Analysis
 
 #### POST /api/v1/content/analyze
@@ -50,36 +188,85 @@ Analyzes provided content for sentiment, emotion, and categorization.
 {
     "text": "This is a sample text to analyze",
     "url": "https://example.com",
-    "title": "Page Title",
-    "user_id": "user123"
+    "analyze_sentiment": true,
+    "analyze_category": true,
+    "analyze_emotions": true
 }
 ```
+
+**Parameters:**
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| text | string | Yes | - | Text content to analyze |
+| url | string | No | null | Source URL of the content |
+| analyze_sentiment | boolean | No | true | Enable sentiment analysis |
+| analyze_category | boolean | No | true | Enable content categorization |
+| analyze_emotions | boolean | No | true | Enable emotion detection |
 
 **Response:**
 ```json
 {
-    "user_id": "user123",
+    "text_length": 33,
+    "word_count": 7,
     "url": "https://example.com",
-    "title": "Page Title", 
-    "text": "This is a sample text to analyze",
     "sentiment": {
         "label": "POSITIVE",
-        "confidence": 0.9999
+        "score": 0.9999
     },
-    "emotion": {
-        "joy": 0.9909,
-        "optimism": 0.0046,
-        "love": 0.0023,
-        "admiration": 0.0011,
-        "approval": 0.0006,
-        "excitement": 0.0003,
-        "caring": 0.0002
+    "category": {
+        "primary": "Programming",
+        "confidence": 0.8234,
+        "all_categories": [
+            {"label": "Programming", "score": 0.8234},
+            {"label": "Documentation", "score": 0.1123},
+            {"label": "Learning", "score": 0.0643}
+        ]
     },
-    "category": "Programming",
-    "category_group": "Productive",
-    "analysis_timestamp": "2024-01-01T12:00:00Z"
+    "emotions": {
+        "dominant": {"label": "joy", "score": 0.9909},
+        "all_emotions": [
+            {"label": "joy", "score": 0.9909},
+            {"label": "optimism", "score": 0.0046},
+            {"label": "love", "score": 0.0023},
+            {"label": "admiration", "score": 0.0011},
+            {"label": "approval", "score": 0.0006}
+        ],
+        "balance": {
+            "positive_score": 0.99,
+            "negative_score": 0.01,
+            "balance": 0.99,
+            "is_balanced": false
+        }
+    }
 }
 ```
+
+#### POST /api/v1/content/analyze/batch
+
+Analyze multiple text contents in a single request.
+
+**Request Body:**
+```json
+{
+    "texts": [
+        "I love this new productivity app!",
+        "Breaking news: Major tech announcement today",
+        "Checking social media updates"
+    ]
+}
+```
+
+**Parameters:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| texts | array[string] | Yes | Array of text strings to analyze |
+
+**Response:**
+Returns an array of analysis results, one for each input text. Each result follows the same structure as the single analysis endpoint. Failed analyses will include an `"error"` field instead of analysis data.
+
+**Status Codes:**
+- `200`: Batch analysis completed (individual items may have errors)
+- `400`: Invalid request data (empty array)
 
 ---
 
